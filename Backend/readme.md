@@ -17,6 +17,11 @@
 
 Authenticate user and receive access token.
 
+## Admin Credentials
+
+email: admin@gmail.com
+password: Admin@123
+
 **Request Body:**
 
 ```javascript
