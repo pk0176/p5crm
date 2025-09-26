@@ -1,8 +1,10 @@
 import { Router } from "express";
 import {
-    createUser,
-    listUser,
+    createStaff,
+    listStaff,
     admintest,
+    updateStaff,
+    changePassword,
 } from "../controllers/admin.controllers.js";
 import { loginUser } from "../controllers/auth.controllers.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
@@ -19,9 +21,15 @@ router.route("/login").post(loginUser);
 //secureroute;
 
 //admin
-router.route("/admin/createUser").post(verifyJWT(["admin"]), createUser);
-router.route("/admin/listAllUser").get(verifyJWT(["admin"]), listUser);
+router.route("/admin/createStaff").post(verifyJWT(["admin"]), createStaff);
+router.route("/admin/listAllStaff").get(verifyJWT(["admin"]), listStaff);
 router.route("/admin/admintest").get(verifyJWT(["admin"]), admintest);
+router
+    .route("/admin/updateStaff/:staffId")
+    .patch(verifyJWT(["admin"]), updateStaff);
+router
+    .route("/admin/change-password/:userId")
+    .patch(verifyJWT(["admin"]), changePassword);
 
 //project Lead
 router.route("/pl/pltest").get(verifyJWT(["project lead"]), projectLeadTest);
