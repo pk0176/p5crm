@@ -1,357 +1,465 @@
 # P5CRM Backend API Documentation
 
-## Base Information
+## Overview
 
-- **Base URL**: `http://localhost:8000` (configurable via PORT environment variable)
-- **API Version**: v1
-- **Base Path**: `/api/v1/users`
-- **Database**: MongoDB (Database name: P5CRM)
+P5CRM Backend is a role-based CRM system built with Node.js, Express.js, and MongoDB. The API supports multiple user roles including admin, project lead, backend developer, frontend developer, designer, and accounts manager.
 
-## API Endpoints
+## Base URL
 
-### Authentication Endpoints
+```
+http://localhost:8000/api/v1
+```
 
-#### Login
+## Authentication
 
-**POST** `/api/v1/users/login`
+The API uses JWT (JSON Web Token) for authentication. After successful login, a token is provided that must be included in subsequent requests.
 
-Authenticate user and receive access token.
+### Authentication Methods
 
-## Admin Credentials
+1. **Cookie-based**: Token is automatically stored in `accessToken` cookie
+2. **Header-based**: Include token in Authorization header: `Bearer <token>`
 
-email: admin@gmail.com
-password: Admin@123
+### Supported Roles
+
+- `admin`
+- `project lead`
+- `backend`
+- `frontend`
+- `designer`
+- `accounts`
+- `user`
+
+---
+
+## Endpoints
+
+### Authentication
+
+#### POST /users/login
+
+Authenticate a user and receive an access token.
 
 **Request Body:**
 
-```javascript
+```json
 {
-  "email": "user@example.com",
-  "password": "userPassword123",
-  "role": "admin" // Required role for login
+    "email": "user@example.com",
+    "password": "password123",
+    "role": "admin"
 }
 ```
 
-**Response (200 OK):**
+**Response (Success - 200):**
 
-```javascript
+```json
 {
-  "statusCode": 200,
-  "data": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", // JWT token
-  "message": "Login successful",
-  "success": true
+    "statusCode": 200,
+    "data": "jwt_access_token_here",
+    "message": "Login successful",
+    "success": true
 }
 ```
-
-**Response (400 Bad Request):**
-
-```javascript
-{
-  "statusCode": 400,
-  "data": null,
-  "message": "Email and password are required", // or "Invalid credentials" or "credentials doesn't match"
-  "success": false,
-  "errors": []
-}
-```
-
-**Cookies Set:**
-
-- `accessToken`: JWT token (httpOnly, secure)
 
 ---
 
 ### Admin Endpoints
 
-All admin endpoints require authentication with `admin` role.
+_All admin endpoints require authentication with `admin` role._
 
-#### Create User
+#### POST /users/admin/createStaff
 
-**POST** `http://localhost:8000/api/v1/users/admin/createUser`
+Create a new staff member.
 
-**Authentication Required**: Yes (admin role)
-
-Create a new user in the system.
-
-**Request Headers:**
+**Headers:**
 
 ```
-Authorization: Bearer <jwt_token>
-// OR
-Cookie: accessToken=<jwt_token>
+Authorization: Bearer <admin_token>
 ```
 
 **Request Body:**
 
-```javascript
+```json
 {
-  "email": "newuser@example.com",
-  "password": "SecurePassword123",
-  "role": "frontend" // Single role as string
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "password": "password123",
+    "role": "backend",
+    "internId": "INT001",
+    "employeeType": "intern",
+    "status": "active"
 }
 ```
 
-**Response (201 Created):**
+**Response (Success - 201):**
 
-```javascript
+```json
 {
-  "statusCode": 201,
-  "data": {
-    "_id": "64a7b8c9d1e2f3a4b5c6d7e8",
-    "email": "newuser@example.com",
-    "roles": ["frontend"],
-    "createdAt": "2024-08-30T07:13:45.123Z",
-    "updatedAt": "2024-08-30T07:13:45.123Z"
-    // password field excluded
-  },
-  "message": "User created successfully",
-  "success": true
-}
-```
-
-**Error Responses:**
-
-- **400 Bad Request**: Missing required fields or user already exists
-- **401 Unauthorized**: Invalid or missing token
-- **403 Forbidden**: Insufficient permissions
-
----
-
-#### List All Users
-
-**GET** `http://localhost:8000/api/v1/users/admin/listAllUser`
-
-**Authentication Required**: Yes (admin role)
-
-Retrieve all users in the system.
-
-**Request Headers:**
-
-```
-Authorization: Bearer <jwt_token>
-// OR
-Cookie: accessToken=<jwt_token>
-```
-
-**Response (200 OK):**
-
-```javascript
-{
-  "statusCode": 200,
-  "data": [
-    {
-      "_id": "64a7b8c9d1e2f3a4b5c6d7e8",
-      "email": "admin@gmail.com",
-      "roles": ["admin"],
-      "createdAt": "2024-08-30T07:13:45.123Z",
-      "updatedAt": "2024-08-30T07:13:45.123Z"
+    "statusCode": 201,
+    "data": {
+        "user": {
+            "_id": "user_id",
+            "email": "john.doe@example.com",
+            "roles": ["backend"],
+            "createdAt": "2023-01-01T00:00:00.000Z",
+            "updatedAt": "2023-01-01T00:00:00.000Z"
+        },
+        "staff": {
+            "_id": "staff_id",
+            "name": "John Doe",
+            "internId": "INT001",
+            "employeeType": "intern",
+            "status": "active",
+            "user": "user_id",
+            "createdAt": "2023-01-01T00:00:00.000Z",
+            "updatedAt": "2023-01-01T00:00:00.000Z"
+        }
     },
-    {
-      "_id": "64a7b8c9d1e2f3a4b5c6d7e9",
-      "email": "designer@example.com",
-      "roles": ["designer"],
-      "createdAt": "2024-08-30T08:15:30.456Z",
-      "updatedAt": "2024-08-30T08:15:30.456Z"
-    }
-    // ... more users (password field excluded from all)
-  ],
-  "message": "Fetch all users",
-  "success": true
+    "message": "Staff created successfully",
+    "success": true
 }
 ```
 
----
+#### GET /users/admin/listAllStaff
 
-#### Admin Test
+Get a list of all staff members.
 
-**GET** `http://localhost:8000/api/v1/users/admin/admintest`
+**Headers:**
 
-**Authentication Required**: Yes (admin role)
+```
+Authorization: Bearer <admin_token>
+```
 
-Test endpoint to verify admin authentication.
+**Response (Success - 200):**
 
-**Response (200 OK):**
-
-```javascript
+```json
 {
-  "statusCode": 200,
-  "data": {
-    "_id": "64a7b8c9d1e2f3a4b5c6d7e8",
-    "email": "admin@gmail.com",
-    "roles": ["admin"],
-    "createdAt": "2024-08-30T07:13:45.123Z",
-    "updatedAt": "2024-08-30T07:13:45.123Z"
-  },
-  "message": "Admin is logged in",
-  "success": true
+    "statusCode": 200,
+    "data": [
+        {
+            "_id": "staff_id",
+            "name": "John Doe",
+            "internId": "INT001",
+            "employeeType": "intern",
+            "status": "active",
+            "user": {
+                "_id": "user_id",
+                "email": "john.doe@example.com",
+                "roles": ["backend"],
+                "createdAt": "2023-01-01T00:00:00.000Z",
+                "updatedAt": "2023-01-01T00:00:00.000Z"
+            },
+            "createdAt": "2023-01-01T00:00:00.000Z",
+            "updatedAt": "2023-01-01T00:00:00.000Z"
+        }
+    ],
+    "message": "Fetched all staff",
+    "success": true
 }
 ```
 
----
+#### PATCH /users/admin/updateStaff/:staffId
 
-### Project Lead Endpoints
+Update an existing staff member.
 
-#### Project Lead Test
+**Headers:**
 
-**GET** `http://localhost:8000/api/v1/users/pl/pltest`
+```
+Authorization: Bearer <admin_token>
+```
 
-**Authentication Required**: Yes (project lead role)
+**Parameters:**
 
-Test endpoint for project lead users.
+- `staffId` (string): The ID of the staff member to update
 
-**Response (200 OK):**
+**Request Body:**
 
-```javascript
+```json
 {
-  "statusCode": 200,
-  "data": {
-    "_id": "64a7b8c9d1e2f3a4b5c6d7ea",
-    "email": "projectlead@example.com",
-    "roles": ["project lead"],
-    "createdAt": "2024-08-30T07:13:45.123Z",
-    "updatedAt": "2024-08-30T07:13:45.123Z"
-  },
-  "message": "Accounts user is logged in", // Note: Message appears to have a typo in source
-  "success": true
+    "name": "John Smith",
+    "email": "john.smith@example.com",
+    "role": "frontend",
+    "internId": "INT002",
+    "employeeType": "full-time",
+    "status": "active"
 }
 ```
 
----
+**Response (Success - 200):**
 
-### Backend Developer Endpoints
-
-#### Backend Test
-
-**GET** `http://localhost:8000/api/v1/users/b/btest`
-
-**Authentication Required**: Yes (backend role)
-
-Test endpoint for backend developers.
-
-**Response (200 OK):**
-
-```javascript
+```json
 {
-  "statusCode": 200,
-  "data": {
-    "_id": "64a7b8c9d1e2f3a4b5c6d7eb",
-    "email": "backend@example.com",
-    "roles": ["backend"],
-    "createdAt": "2024-08-30T07:13:45.123Z",
-    "updatedAt": "2024-08-30T07:13:45.123Z"
-  },
-  "message": "backend user is logged in",
-  "success": true
+    "statusCode": 200,
+    "data": {
+        "_id": "staff_id",
+        "name": "John Smith",
+        "internId": "INT002",
+        "employeeType": "full-time",
+        "status": "active",
+        "user": {
+            "_id": "user_id",
+            "email": "john.smith@example.com",
+            "roles": ["frontend"],
+            "createdAt": "2023-01-01T00:00:00.000Z",
+            "updatedAt": "2023-01-01T00:00:00.000Z"
+        },
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    "message": "Staff updated successfully",
+    "success": true
 }
 ```
 
----
+#### PATCH /users/admin/change-password/:userId
 
-### Frontend Developer Endpoints
+Change password for any user.
 
-#### Frontend Test
+**Headers:**
 
-**GET** `http://localhost:8000/api/v1/users/f/ftest`
+```
+Authorization: Bearer <admin_token>
+```
 
-**Authentication Required**: Yes (frontend role)
+**Parameters:**
 
-Test endpoint for frontend developers.
+- `userId` (string): The ID of the user whose password to change
 
-**Response (200 OK):**
+**Request Body:**
 
-```javascript
+```json
 {
-  "statusCode": 200,
-  "data": {
-    "_id": "64a7b8c9d1e2f3a4b5c6d7ec",
-    "email": "frontend@example.com",
-    "roles": ["frontend"],
-    "createdAt": "2024-08-30T07:13:45.123Z",
-    "updatedAt": "2024-08-30T07:13:45.123Z"
-  },
-  "message": "Accounts user is logged in", // Note: Message appears to have a typo in source
-  "success": true
+    "newPassword": "newPassword123"
 }
 ```
 
----
+**Response (Success - 200):**
 
-### Designer Endpoints
-
-#### Designer Test
-
-**GET** `http://localhost:8000/api/v1/users/d/dtest`
-
-**Authentication Required**: Yes (designer role)
-
-Test endpoint for designers.
-
-**Response (200 OK):**
-
-```javascript
+```json
 {
-  "statusCode": 200,
-  "data": {
-    "_id": "64a7b8c9d1e2f3a4b5c6d7ed",
-    "email": "designer@example.com",
-    "roles": ["designer"],
-    "createdAt": "2024-08-30T07:13:45.123Z",
-    "updatedAt": "2024-08-30T07:13:45.123Z"
-  },
-  "message": "Accounts user is logged in", // Note: Message appears to have a typo in source
-  "success": true
+    "statusCode": 200,
+    "data": {
+        "message": "Password updated successfully"
+    },
+    "message": "Password changed successfully",
+    "success": true
 }
 ```
 
----
+#### GET /users/admin/admintest
 
-### Accounts Endpoints
+Test endpoint for admin authentication.
 
-#### Accounts Test
+**Headers:**
 
-**GET** `http://localhost:8000/api/v1/users/a/atest`
+```
+Authorization: Bearer <admin_token>
+```
 
-**Authentication Required**: Yes (accounts role)
+**Response (Success - 200):**
 
-Test endpoint for accounts users.
-
-**Response (200 OK):**
-
-```javascript
+```json
 {
-  "statusCode": 200,
-  "data": {
-    "_id": "64a7b8c9d1e2f3a4b5c6d7ee",
-    "email": "accounts@example.com",
-    "roles": ["accounts"],
-    "createdAt": "2024-08-30T07:13:45.123Z",
-    "updatedAt": "2024-08-30T07:13:45.123Z"
-  },
-  "message": "Accounts user is logged in",
-  "success": true
+    "statusCode": 200,
+    "data": {
+        "_id": "user_id",
+        "email": "admin@example.com",
+        "roles": ["admin"],
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    "message": "Admin is logged in",
+    "success": true
 }
 ```
 
 ---
 
-### Default Admin Account
+### Role-Based Test Endpoints
 
-The system automatically creates a default admin account on startup:
+#### GET /users/pl/pltest
 
-- **Email**: `admin@gmail.com`
-- **Password**: `Admin@123`
-- **Role**: `admin`
+Test endpoint for project lead authentication.
 
-## Development
+**Headers:**
 
-### Running the Server
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
+```
+Authorization: Bearer <project_lead_token>
 ```
 
-_This documentation is generated based on the current codebase structure and may need updates as the API evolves._
+**Response (Success - 200):**
+
+```json
+{
+    "statusCode": 200,
+    "data": {
+        "_id": "user_id",
+        "email": "pl@example.com",
+        "roles": ["project lead"],
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    "message": "Accounts user is logged in",
+    "success": true
+}
+```
+
+#### GET /users/b/btest
+
+Test endpoint for backend developer authentication.
+
+**Headers:**
+
+```
+Authorization: Bearer <backend_token>
+```
+
+**Response (Success - 200):**
+
+```json
+{
+    "statusCode": 200,
+    "data": {
+        "_id": "user_id",
+        "email": "backend@example.com",
+        "roles": ["backend"],
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    "message": "backend user is logged in",
+    "success": true
+}
+```
+
+#### GET /users/f/ftest
+
+Test endpoint for frontend developer authentication.
+
+**Headers:**
+
+```
+Authorization: Bearer <frontend_token>
+```
+
+**Response (Success - 200):**
+
+```json
+{
+    "statusCode": 200,
+    "data": {
+        "_id": "user_id",
+        "email": "frontend@example.com",
+        "roles": ["frontend"],
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    "message": "Accounts user is logged in",
+    "success": true
+}
+```
+
+#### GET /users/d/dtest
+
+Test endpoint for designer authentication.
+
+**Headers:**
+
+```
+Authorization: Bearer <designer_token>
+```
+
+**Response (Success - 200):**
+
+```json
+{
+    "statusCode": 200,
+    "data": {
+        "_id": "user_id",
+        "email": "designer@example.com",
+        "roles": ["designer"],
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    "message": "Accounts user is logged in",
+    "success": true
+}
+```
+
+#### GET /users/a/atest
+
+Test endpoint for accounts manager authentication.
+
+**Headers:**
+
+```
+Authorization: Bearer <accounts_token>
+```
+
+**Response (Success - 200):**
+
+```json
+{
+    "statusCode": 200,
+    "data": {
+        "_id": "user_id",
+        "email": "accounts@example.com",
+        "roles": ["accounts"],
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    "message": "Accounts user is logged in",
+    "success": true
+}
+```
+
+---
+
+## Data Models
+
+### User Model
+
+```json
+{
+    "_id": "ObjectId",
+    "email": "string (required, unique, lowercase)",
+    "password": "string (required, hashed)",
+    "roles": [
+        "array of strings (enum: admin, designer, frontend, backend, accounts, project lead, user)"
+    ],
+    "createdAt": "Date",
+    "updatedAt": "Date"
+}
+```
+
+### Staff Model
+
+```json
+{
+    "_id": "ObjectId",
+    "name": "string (required)",
+    "internId": "string (unique, optional)",
+    "employeeType": "string (enum: intern, full-time)",
+    "status": "string (enum: active, inactive, default: active)",
+    "user": "ObjectId (ref: User, required)",
+    "createdAt": "Date",
+    "updatedAt": "Date"
+}
+```
+
+### Client Model
+
+```json
+{
+    "_id": "ObjectId",
+    "clientId": "number (auto-increment, unique)",
+    "clientName": "string (required)",
+    "clientPhone": "string (required, 10-digit validation)",
+    "clientEmail": "string (required, email validation)",
+    "GST": "string (optional, GST format validation)",
+    "estimatedValue": "number (required, min: 0)",
+    "confirmationBy": "string (enum: email, phone)",
+    "billingType": "string (enum: annually, onetime, monthly)",
+    "billingStatus": "string (enum: pending, paid, overdue, default: pending)",
+    "createdAt": "Date",
+    "updatedAt": "Date"
+}
+```
