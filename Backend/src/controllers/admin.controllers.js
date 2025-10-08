@@ -32,6 +32,8 @@ const createStaff = asyncHandler(async (req, res) => {
         status: status || "active",
         user: user._id,
     });
+
+    user.password = undefined;
     return res
         .status(201)
         .json(
