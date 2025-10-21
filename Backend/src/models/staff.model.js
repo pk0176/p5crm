@@ -7,14 +7,28 @@ const staffSchema = new Schema(
             required: true,
             trim: true,
         },
-        internId: {
+        staffId: {
             type: String,
-            required: false,
             unique: true,
+            validate: {
+                validator: function (value) {
+                    if (this.employeeType === "employee") {
+                        return /^PDS-\d{3}(\/R)?$/.test(value); //PDS-xxx
+                    } else if (this.employeeType === "intern") {
+                        return /^PDSI-\d{3}(\/R)?$/.test(value); // PDSI-xxx
+                    } else if (this.employeeType === "others") {
+                        // For 'others', ID is optional or any string
+                        return true;
+                    }
+                    return false;
+                },
+                message:
+                    "Invalid ID format: Use 'PDS-xxx' for 'employee' and 'PDSI-xxx' for 'intern.",
+            },
         },
         employeeType: {
             type: String,
-            enum: ["intern", "full-time"],
+            enum: ["intern", "employee", "others"],
             required: true,
         },
         status: {

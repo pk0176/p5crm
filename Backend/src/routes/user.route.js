@@ -5,6 +5,11 @@ import {
     admintest,
     updateStaff,
     changePassword,
+    createClient,
+    listClients,
+    createProject,
+    listProject,
+    updateProject,
 } from "../controllers/admin.controllers.js";
 import { loginUser } from "../controllers/auth.controllers.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
@@ -30,6 +35,13 @@ router
 router
     .route("/admin/change-password/:userId")
     .patch(verifyJWT(["admin"]), changePassword);
+router.route("/admin/createClient").post(verifyJWT(["admin"]), createClient);
+router.route("/admin/listAllClients").get(verifyJWT(["admin"]), listClients);
+router.route("/admin/createProject").post(verifyJWT(["admin"]), createProject);
+router.route("/admin/listAllProjects").get(verifyJWT(["admin"]), listProject);
+router
+    .route("/admin/updateProject/:projectId")
+    .patch(verifyJWT(["admin"]), updateProject);
 
 //project Lead
 router.route("/pl/pltest").get(verifyJWT(["project lead"]), projectLeadTest);
