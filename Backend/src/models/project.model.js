@@ -7,6 +7,11 @@ const projectSchema = new mongoose.Schema(
             ref: "Client",
             required: true,
         },
+        projectID:{
+            type:String,
+            required:true,
+            unique:true
+        },
         projectName: {
             type: String,
             required: true,

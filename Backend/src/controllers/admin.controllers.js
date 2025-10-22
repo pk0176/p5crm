@@ -259,6 +259,7 @@ const listClients = asyncHandler(async (req, res) => {
 const createProject = asyncHandler(async (req, res) => {
     const {
         clientName,
+        projectID,
         projectName,
         projectValue,
         advancePayment,
@@ -276,6 +277,7 @@ const createProject = asyncHandler(async (req, res) => {
     //  Validate required fields
     if (
         !clientName ||
+        !project ||
         !projectName ||
         !projectValue ||
         !projectLead ||
@@ -298,6 +300,23 @@ const createProject = asyncHandler(async (req, res) => {
     );
     if (invalidId) {
         throw new ApiError(400, "One or more provided IDs are invalid");
+    }
+
+    // Validate projectID format
+    if (!/^PDS\d{3}$/.test(projectID)) {
+        throw new ApiError(400, "Project ID must be in 'PDSXXX' format");
+    }
+
+    //Extract the numeric part of the projectID and validate it
+    const projectIdNumber = parseInt(projectID.substring(3), 10);
+    if (projectIdNumber < 129) {
+        throw new ApiError(400, "Project ID number must be 129 or greater");
+    }
+
+    // Check if projectID already exists
+    const existingProject = await Project.findOne({ projectID });
+    if (existingProject) {
+        throw new ApiError(400, "Project with this ID already exists");
     }
 
     //Validate numeric fields
@@ -324,6 +343,7 @@ const createProject = asyncHandler(async (req, res) => {
     // Create Project
     const project = await Project.create({
         clientName,
+        projectID,
         projectName,
         projectValue,
         advancePayment,
@@ -338,7 +358,6 @@ const createProject = asyncHandler(async (req, res) => {
         sow,
     });
 
-    // ✅ Response
     return res
         .status(201)
         .json(new ApiResponse(201, project, "Project created successfully"));
@@ -354,21 +373,18 @@ const listProject = asyncHandler(async (req, res) => {
 //Update project
 
 const updateProject = asyncHandler(async (req, res) => {
-    const { projectId } = req.params; //Project ID from URL
+    const { projectID } = req.params; //Project ID from URL
     const updateData = req.body;
 
-    //validate projectId
-    if (!mongoose.Types.ObjectId.isValid(projectId)) {
-        throw new ApiError(400, "Invalid Project ID");
-    }
     //Fetch existing project;
-    const existingProject = await Project.findById(projectId);
+    const existingProject = await Project.findOne({ projectID });
     if (!existingProject) {
         throw new ApiError(404, "Project not found");
     }
 
     //Define allowed fields for update
     const allowedFields = [
+        "projectID",
         "projectName",
         "projectValue",
         "advancePayment",
@@ -415,6 +431,30 @@ const updateProject = asyncHandler(async (req, res) => {
         );
     }
 
+    // Validate projectID format if present
+    if (updates.projectID) {
+        if (!/^PDS\d{3}$/.test(updates.projectID)) {
+            throw new ApiError(400, "Project ID must be in 'PDSXXX' format");
+        }
+
+        //Extract the numeric part of the projectID and validate it
+        const projectIdNumber = parseInt(updates.projectID.substring(3), 10);
+        if (projectIdNumber < 129) {
+            throw new ApiError(400, "Project ID number must be 129 or greater");
+        }
+
+        // Check if projectID already exists
+        const existingProjectById = await Project.findOne({
+            projectID: updates.projectID,
+        });
+        if (
+            existingProjectById &&
+            existingProjectById.projectID !== projectID
+        ) {
+            throw new ApiError(400, "Project with this ID already exists");
+        }
+    }
+
     //Validate date fields (dd-mm-yyyy format)
     if (updates.paymentDate) {
         const parsed = parseDate(updates.paymentDate);
@@ -439,10 +479,14 @@ const updateProject = asyncHandler(async (req, res) => {
     }
 
     //Perform the update
-    const updatedProject = await Project.findByIdAndUpdate(projectId, updates, {
-        new: true, // return updated document
-        runValidators: true, // ensure schema validation
-    });
+    const updatedProject = await Project.findOneAndUpdate(
+        { projectID },
+        updates,
+        {
+            new: true, // return updated document
+            runValidators: true, // ensure schema validation
+        }
+    );
 
     return res
         .status(200)
