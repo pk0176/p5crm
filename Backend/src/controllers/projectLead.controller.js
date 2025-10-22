@@ -3,12 +3,13 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ProjectLead } from "../models/projectLead.model.js";
 import { Project } from "../models/project.model.js";
-import mongoose from "mongoose";
 
 // List all projects for the logged-in Project Lead
 const listAllProjects = asyncHandler(async (req, res) => {
     // Step 1: Find all projects where the current user is the project lead.
-    const assignedProjects = await Project.find({ projectLead: req.user._id }).select("_id");
+    const assignedProjects = await Project.find({
+        projectLead: req.user._id,
+    }).select("_id");
 
     if (!assignedProjects || assignedProjects.length === 0) {
         return res
@@ -17,10 +18,12 @@ const listAllProjects = asyncHandler(async (req, res) => {
     }
 
     // Step 2: Extract the project IDs from the found projects.
-    const projectIds = assignedProjects.map(p => p._id);
+    const projectIds = assignedProjects.map((p) => p._id);
 
     // Step 3: Find the ProjectLead documents that correspond to these projects.
-    const projectLeadDocs = await ProjectLead.find({ project: { $in: projectIds } }).populate({
+    const projectLeadDocs = await ProjectLead.find({
+        project: { $in: projectIds },
+    }).populate({
         path: "project",
         select: "projectID projectName sow createdAt deadline status awsDetails",
     });
@@ -28,7 +31,13 @@ const listAllProjects = asyncHandler(async (req, res) => {
     // Return the list of populated ProjectLead documents
     return res
         .status(200)
-        .json(new ApiResponse(200, projectLeadDocs, "Projects fetched successfully"));
+        .json(
+            new ApiResponse(
+                200,
+                projectLeadDocs,
+                "Projects fetched successfully"
+            )
+        );
 });
 
 // Edit a project's repository details
@@ -47,7 +56,10 @@ const editProject = asyncHandler(async (req, res) => {
 
     if (!projectLeadDoc) {
         // This case might indicate a data inconsistency issue
-        throw new ApiError(404, "Project lead details not found for this project");
+        throw new ApiError(
+            404,
+            "Project lead details not found for this project"
+        );
     }
 
     // Update the fields
@@ -63,7 +75,9 @@ const editProject = asyncHandler(async (req, res) => {
     await projectLeadDoc.save();
 
     // Populate the project details for the response
-    const updatedProject = await ProjectLead.findById(projectLeadDoc._id).populate({
+    const updatedProject = await ProjectLead.findById(
+        projectLeadDoc._id
+    ).populate({
         path: "project",
         select: "projectID projectName sow createdAt deadline status awsDetails",
     });
