@@ -272,6 +272,7 @@ const createProject = asyncHandler(async (req, res) => {
         awsDetails,
         requirement,
         sow,
+        status,
     } = req.body;
 
     //  Validate required fields
@@ -356,6 +357,7 @@ const createProject = asyncHandler(async (req, res) => {
         awsDetails,
         requirement,
         sow,
+        status,
     });
 
     return res
@@ -397,6 +399,7 @@ const updateProject = asyncHandler(async (req, res) => {
         "awsDetails",
         "requirement",
         "sow",
+        "status",
     ];
 
     //filter out only allowed fields from request body
@@ -429,6 +432,14 @@ const updateProject = asyncHandler(async (req, res) => {
             400,
             "Advance payment must be a non-negative number"
         );
+    }
+
+    // Validate status field if present
+    if (updates.status) {
+        const allowedStatus = ["in progress", "completed", "cancelled"];
+        if (!allowedStatus.includes(updates.status)) {
+            throw new ApiError(400, "Invalid status value");
+        }
     }
 
     // Validate projectID format if present

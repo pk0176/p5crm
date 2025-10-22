@@ -7,10 +7,10 @@ const projectSchema = new mongoose.Schema(
             ref: "Client",
             required: true,
         },
-        projectID:{
-            type:String,
-            required:true,
-            unique:true
+        projectID: {
+            type: String,
+            required: true,
+            unique: true,
         },
         projectName: {
             type: String,
@@ -51,6 +51,11 @@ const projectSchema = new mongoose.Schema(
         deadline: {
             type: Date,
             required: true,
+        },
+        status: {
+            type: String,
+            default: "in progress",
+            enum: ["in progress", "completed", "cancelled"],
         },
         awsDetails: {
             id: {
