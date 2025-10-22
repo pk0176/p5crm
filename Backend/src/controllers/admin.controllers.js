@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { parseDate } from "../utils/parseDate.js";
 import { Project } from "../models/project.model.js";
 import mongoose from "mongoose";
+import { ProjectLead } from "../models/projectLead.model.js";
 // Create Staff
 const createStaff = asyncHandler(async (req, res) => {
     const { name, email, password, role, staffId, employeeType, status } =
@@ -358,6 +359,11 @@ const createProject = asyncHandler(async (req, res) => {
         requirement,
         sow,
         status,
+    });
+
+    // Create a ProjectLead
+    await ProjectLead.create({
+        project: project._id,
     });
 
     return res
