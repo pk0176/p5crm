@@ -89,22 +89,18 @@ const admintest = asyncHandler(async (req, res) => {
 
 //UpdateStaff
 const updateStaff = asyncHandler(async (req, res) => {
-    const { staffId } = req.params; // MongoDB _id of staff
+    const { staffId } = req.params; // Custom staffId from URL
     const {
         name,
         email,
         role,
-        staffId: newStaffId, //store the staffId in newStaffId variable  (req.params already using staffId)
+        staffId: newStaffId,
         employeeType,
         status,
     } = req.body;
 
-    //  Validate staffId
-    if (!mongoose.Types.ObjectId.isValid(staffId)) {
-        throw new ApiError(400, "Invalid staff ID");
-    }
-
-    const staff = await Staff.findById(staffId);
+    // Find staff by custom staffId
+    const staff = await Staff.findOne({ staffId });
     if (!staff) {
         throw new ApiError(404, "Staff not found");
     }
@@ -113,7 +109,7 @@ const updateStaff = asyncHandler(async (req, res) => {
     if (email || role) {
         const user = await User.findById(staff.user);
         if (!user) {
-            throw new ApiError(404, "User account not found");
+            throw new ApiError(404, "Associated user account not found");
         }
 
         // Email update validation
@@ -136,7 +132,7 @@ const updateStaff = asyncHandler(async (req, res) => {
         await user.save();
     }
 
-    // Validate staffId format if employeeType or staffId is updated
+    // Validate staffId format if employeeType or newStaffId is updated
     if (employeeType || newStaffId) {
         const type = employeeType || staff.employeeType;
         const idToValidate = newStaffId || staff.staffId;
@@ -147,7 +143,6 @@ const updateStaff = asyncHandler(async (req, res) => {
         if (type === "intern" && !/^PDSI-\d{3}(\/R)?$/.test(idToValidate)) {
             throw new ApiError(400, "Intern ID must be in 'PDSI-001' format");
         }
-        // 'others' can have any ID
     }
 
     //  Prepare update object
@@ -158,8 +153,8 @@ const updateStaff = asyncHandler(async (req, res) => {
     if (status !== undefined) updates.status = status;
 
     // Update staff document
-    const updatedStaff = await Staff.findByIdAndUpdate(
-        staffId,
+    const updatedStaff = await Staff.findOneAndUpdate(
+        { staffId },
         { $set: updates },
         { new: true, runValidators: true }
     ).populate("user", "-password");
@@ -169,22 +164,30 @@ const updateStaff = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, updatedStaff, "Staff updated successfully"));
 });
 
+//Change Password of user/staff
 const changePassword = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
+    const { staffId } = req.params;
     const { newPassword } = req.body;
 
-    if (!userId || !newPassword) {
+    if (!staffId || !newPassword) {
         throw new ApiError(400, "User ID and new password are required");
     }
 
     // Find user and staff
-    const user = await User.findById(userId);
-    if (!user) {
-        throw new ApiError(404, "User not found");
+    const staff = await Staff.findOne({ staffId });
+
+    if (!staff) {
+        throw new ApiError(404, "Staff not found");
     }
 
+    const user = await User.findById(staff.user);
+
+    if (!user) {
+        throw new ApiError(404, "Associated user account not found");
+    }
+    const hashedPassword = await bycrpt(newPassword, 10);
     // Update password
-    user.password = newPassword;
+    user.password = hashedPassword;
     await user.save();
 
     return res
