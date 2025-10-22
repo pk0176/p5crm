@@ -7,13 +7,15 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { parseDate } from "../utils/parseDate.js";
 import { Project } from "../models/project.model.js";
 import mongoose from "mongoose";
+import bycrpt from "bcrypt";
 import { ProjectLead } from "../models/projectLead.model.js";
+
 // Create Staff
 const createStaff = asyncHandler(async (req, res) => {
     const { name, email, password, role, staffId, employeeType, status } =
         req.body;
 
-    //  Validate required fields
+    // Validate required fields
     if (
         [name, email, password, role, staffId, employeeType].some(
             (field) => !field || field.trim() === ""
@@ -31,29 +33,37 @@ const createStaff = asyncHandler(async (req, res) => {
         );
     }
 
-    // Validate staffId format based on employeeType
+    // Validate staffId format
     if (employeeType === "employee" && !/^PDS-\d{3}(\/R)?$/.test(staffId)) {
-        throw new ApiError(400, "Employee ID must be in 'PDS-001' format");
+        throw new ApiError(
+            400,
+            "Employee ID must be in 'PDS-001' or 'PDS-001/R' format"
+        );
     }
     if (employeeType === "intern" && !/^PDSI-\d{3}(\/R)?$/.test(staffId)) {
-        throw new ApiError(400, "Intern ID must be in 'PDSI-001' format");
+        throw new ApiError(
+            400,
+            "Intern ID must be in 'PDSI-001' or 'PDSI-001/R' format"
+        );
     }
-    // 'others' can have any staffId
 
-    //Check if email already exists
+    // Check for duplicate email
     const existingUser = await User.findOne({ email });
     if (existingUser) {
         throw new ApiError(400, "User with this email already exists");
     }
 
-    //Create User
+    // Hash password (typo fixed: bcrypt, not bycrpt)
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    //  Create User
     const user = await User.create({
         email,
-        password,
+        password: hashedPassword,
         roles: [role.toLowerCase()],
     });
 
-    // Create Staff
+    //  Create Staff
     const staff = await Staff.create({
         name,
         staffId,
@@ -62,13 +72,18 @@ const createStaff = asyncHandler(async (req, res) => {
         user: user._id,
     });
 
-    // Hide password before returning
-    user.password = undefined;
+    //  Hide password before returning
+    const safeUser = user.toObject();
+    delete safeUser.password;
 
     return res
         .status(201)
         .json(
-            new ApiResponse(201, { user, staff }, "Staff created successfully")
+            new ApiResponse(
+                201,
+                { user: safeUser, staff },
+                "Staff created successfully"
+            )
         );
 });
 
@@ -185,7 +200,7 @@ const changePassword = asyncHandler(async (req, res) => {
     if (!user) {
         throw new ApiError(404, "Associated user account not found");
     }
-    const hashedPassword = await bycrpt(newPassword, 10);
+    const hashedPassword = await bycrpt.hash(newPassword, 10);
     // Update password
     user.password = hashedPassword;
     await user.save();
