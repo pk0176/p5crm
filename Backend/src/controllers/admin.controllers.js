@@ -421,7 +421,6 @@ const updateProject = asyncHandler(async (req, res) => {
         "backend",
         "deadline",
         "awsDetails",
-        "requirement",
         "sow",
         "status",
     ];

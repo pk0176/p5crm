@@ -25,7 +25,7 @@ const listAllProjects = asyncHandler(async (req, res) => {
         project: { $in: projectIds },
     }).populate({
         path: "project",
-        select: "projectID projectName sow createdAt deadline status awsDetails",
+        select: "projectID projectName sow createdAt deadline status awsDetails features",
     });
 
     // Return the list of populated ProjectLead documents
@@ -43,7 +43,7 @@ const listAllProjects = asyncHandler(async (req, res) => {
 // Edit a project's repository details
 const editProject = asyncHandler(async (req, res) => {
     const { projectID } = req.params;
-    const { pushToP5Repo, apiRepository } = req.body;
+    const { pushToP5Repo } = req.body;
 
     // Find the project by its custom projectID
     const project = await Project.findOne({ projectID });
@@ -67,10 +67,6 @@ const editProject = asyncHandler(async (req, res) => {
         projectLeadDoc.pushToP5Repo = pushToP5Repo;
     }
 
-    if (apiRepository !== undefined) {
-        projectLeadDoc.apiRepository = apiRepository;
-    }
-
     // Save the updated document
     await projectLeadDoc.save();
 
@@ -79,7 +75,7 @@ const editProject = asyncHandler(async (req, res) => {
         projectLeadDoc._id
     ).populate({
         path: "project",
-        select: "projectID projectName sow createdAt deadline status awsDetails",
+        select: "projectID projectName sow createdAt deadline status awsDetails features",
     });
 
     // Return the updated document

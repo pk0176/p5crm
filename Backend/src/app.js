@@ -28,9 +28,11 @@ app.use(cookieParser());
 import userRouter from "./routes/user.route.js";
 import projectLeadRouter from "./routes/projectLead.route.js";
 import adminRouter from "./routes/admin.route.js";
+import designerRouter from "./routes/designer.route.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/project-lead", projectLeadRouter);
+app.use("/api/v1/designer", designerRouter);
 
 export default app;
