@@ -1,4 +1,3 @@
-
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -30,9 +29,7 @@ const listBackendProjects = asyncHandler(async (req, res) => {
                 status: project.status,
                 figma: project.requirement,
                 awsDetails: project.awsDetails,
-                pushToP5Repo: projectLeadDoc ? projectLeadDoc.pushToP5Repo : false,
-                apiRepository: projectLeadDoc ? projectLeadDoc.apiRepository : "",
-                features: projectLeadDoc ? projectLeadDoc.features : [],
+                apiEndpoints: projectLeadDoc ? projectLeadDoc.apiRepository : [],
             };
         })
     );
@@ -40,14 +37,9 @@ const listBackendProjects = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, projectsWithDetails, "Projects fetched successfully"));
 });
 
-// 2. Mark a feature as developed
-const developFeature = asyncHandler(async (req, res) => {
-    const { projectID, featureId } = req.params;
-    const { apiRepository } = req.body;
-
-    if (!apiRepository) {
-        throw new ApiError(400, "API repository link is required");
-    }
+// 2. Mark an API as implemented
+const implementApiEndpoint = asyncHandler(async (req, res) => {
+    const { projectID, apiId } = req.params;
 
     const project = await Project.findOne({ projectID });
     if (!project) {
@@ -55,24 +47,24 @@ const developFeature = asyncHandler(async (req, res) => {
     }
 
     if (project.backend.toString() !== req.user._id.toString()) {
-        throw new ApiError(403, "You are not authorized to develop features for this project");
+        throw new ApiError(403, "You are not authorized to implement APIs for this project");
     }
 
     const projectLeadDoc = await ProjectLead.findOne({ project: project._id });
     if (!projectLeadDoc) {
-        throw new ApiError(404, "Project lead details not found for this project");
+        throw new ApiError(404, "Project details not found");
     }
 
-    const feature = projectLeadDoc.features.id(featureId);
-    if (!feature) {
-        throw new ApiError(404, "Feature not found");
+    const api = projectLeadDoc.apiRepository.id(apiId);
+    if (!api) {
+        throw new ApiError(404, "API endpoint not found");
     }
 
-    feature.isDeveloped = true;
-    projectLeadDoc.apiRepository = apiRepository;
+    api.implemented = true;
+    api.implementedBy = req.user._id;
     await projectLeadDoc.save();
 
-    return res.status(200).json(new ApiResponse(200, projectLeadDoc, "Feature marked as developed successfully"));
+    return res.status(200).json(new ApiResponse(200, projectLeadDoc, "API endpoint marked as implemented"));
 });
 
-export { listBackendProjects, developFeature };
+export { listBackendProjects, implementApiEndpoint };

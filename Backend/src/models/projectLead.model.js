@@ -8,7 +8,7 @@ const apiSchema = new mongoose.Schema(
         },
         method: {
             type: String,
-            enum: ["GET", "POST", "PUT", "DELETE"],
+            enum: ["GET", "POST", "PUT", "DELETE", "PATCH"],
             required: true,
         },
         requestFormat: {

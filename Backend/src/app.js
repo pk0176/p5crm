@@ -29,10 +29,14 @@ import userRouter from "./routes/user.route.js";
 import projectLeadRouter from "./routes/projectLead.route.js";
 import adminRouter from "./routes/admin.route.js";
 import designerRouter from "./routes/designer.route.js";
+import frontendRouter from "./routes/frontend.route.js";
+import backendRouter from "./routes/backend.route.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/project-lead", projectLeadRouter);
 app.use("/api/v1/designer", designerRouter);
+app.use("/api/v1/frontend", frontendRouter);
+app.use("/api/v1/backend", backendRouter);
 
 export default app;
