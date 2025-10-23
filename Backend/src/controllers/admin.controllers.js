@@ -460,7 +460,12 @@ const updateProject = asyncHandler(async (req, res) => {
 
     // Validate status field if present
     if (updates.status) {
-        const allowedStatus = ["in progress", "completed", "cancelled"];
+        const allowedStatus = [
+            "in progress",
+            "completed",
+            "cancelled",
+            "on hold",
+        ];
         if (!allowedStatus.includes(updates.status)) {
             throw new ApiError(400, "Invalid status value");
         }

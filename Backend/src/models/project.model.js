@@ -55,7 +55,7 @@ const projectSchema = new mongoose.Schema(
         status: {
             type: String,
             default: "in progress",
-            enum: ["in progress", "completed", "cancelled"],
+            enum: ["in progress", "completed", "cancelled", "on hold"],
         },
         awsDetails: {
             id: {
