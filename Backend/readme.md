@@ -1,465 +1,854 @@
-# P5CRM Backend API Documentation
+# API Documentation
 
-## Overview
+This document provides documentation for the P5CRM API.
 
-P5CRM Backend is a role-based CRM system built with Node.js, Express.js, and MongoDB. The API supports multiple user roles including admin, project lead, backend developer, frontend developer, designer, and accounts manager.
+## Admin API
 
-## Base URL
+Base Path: `/api/v1/admin`
 
-```
-http://localhost:8000/api/v1
-```
+All endpoints under this path require admin authentication.
 
-## Authentication
+### Create Staff
 
-The API uses JWT (JSON Web Token) for authentication. After successful login, a token is provided that must be included in subsequent requests.
-
-### Authentication Methods
-
-1. **Cookie-based**: Token is automatically stored in `accessToken` cookie
-2. **Header-based**: Include token in Authorization header: `Bearer <token>`
-
-### Supported Roles
-
-- `admin`
-- `project lead`
-- `backend`
-- `frontend`
-- `designer`
-- `accounts`
-- `user`
-
----
-
-## Endpoints
-
-### Authentication
-
-#### POST /users/login
-
-Authenticate a user and receive an access token.
-
-**Request Body:**
-
-```json
-{
-    "email": "user@example.com",
-    "password": "password123",
-    "role": "admin"
-}
-```
-
-**Response (Success - 200):**
-
-```json
-{
-    "statusCode": 200,
-    "data": "jwt_access_token_here",
-    "message": "Login successful",
-    "success": true
-}
-```
-
----
-
-### Admin Endpoints
-
-_All admin endpoints require authentication with `admin` role._
-
-#### POST /users/admin/createStaff
-
-Create a new staff member.
-
-**Headers:**
-
-```
-Authorization: Bearer <admin_token>
-```
-
-**Request Body:**
-
-```json
-{
-    "name": "John Doe",
-    "email": "john.doe@example.com",
-    "password": "password123",
-    "role": "backend",
-    "internId": "INT001",
-    "employeeType": "intern",
-    "status": "active"
-}
-```
-
-**Response (Success - 201):**
-
-```json
-{
-    "statusCode": 201,
-    "data": {
-        "user": {
-            "_id": "user_id",
-            "email": "john.doe@example.com",
-            "roles": ["backend"],
-            "createdAt": "2023-01-01T00:00:00.000Z",
-            "updatedAt": "2023-01-01T00:00:00.000Z"
-        },
-        "staff": {
-            "_id": "staff_id",
-            "name": "John Doe",
-            "internId": "INT001",
-            "employeeType": "intern",
-            "status": "active",
-            "user": "user_id",
-            "createdAt": "2023-01-01T00:00:00.000Z",
-            "updatedAt": "2023-01-01T00:00:00.000Z"
-        }
-    },
-    "message": "Staff created successfully",
-    "success": true
-}
-```
-
-#### GET /users/admin/listAllStaff
-
-Get a list of all staff members.
-
-**Headers:**
-
-```
-Authorization: Bearer <admin_token>
-```
-
-**Response (Success - 200):**
-
-```json
-{
-    "statusCode": 200,
-    "data": [
+- **Endpoint:** `/createStaff`
+- **Method:** `POST`
+- **Description:** Creates a new staff member and a corresponding user account.
+- **Request Body:**
+    ```json
+    {
+        "name": "string (required)",
+        "email": "string (required, unique)",
+        "password": "string (required)",
+        "role": "string (required)",
+        "staffId": "string (required, unique)",
+        "employeeType": "string (required, enum: 'employee', 'intern', 'others')",
+        "status": "string (optional, default: 'active')"
+    }
+    ```
+- **Response:**
+    - **201 Created:**
+        ```json
         {
-            "_id": "staff_id",
-            "name": "John Doe",
-            "internId": "INT001",
-            "employeeType": "intern",
-            "status": "active",
-            "user": {
-                "_id": "user_id",
-                "email": "john.doe@example.com",
-                "roles": ["backend"],
-                "createdAt": "2023-01-01T00:00:00.000Z",
-                "updatedAt": "2023-01-01T00:00:00.000Z"
+            "statusCode": 201,
+            "data": {
+                "user": {
+                    "email": "string",
+                    "roles": ["string"],
+                    "_id": "ObjectId",
+                    "createdAt": "Date",
+                    "updatedAt": "Date"
+                },
+                "staff": {
+                    "name": "string",
+                    "staffId": "string",
+                    "employeeType": "string",
+                    "status": "string",
+                    "user": "ObjectId",
+                    "_id": "ObjectId",
+                    "createdAt": "Date",
+                    "updatedAt": "Date"
+                }
             },
-            "createdAt": "2023-01-01T00:00:00.000Z",
-            "updatedAt": "2023-01-01T00:00:00.000Z"
+            "message": "Staff created successfully"
         }
-    ],
-    "message": "Fetched all staff",
-    "success": true
-}
-```
+        ```
+    - **400 Bad Request:** If required fields are missing, email is a duplicate, or validation fails.
+- **Validation:**
+    - All fields (`name`, `email`, `password`, `role`, `staffId`, `employeeType`) are required.
+    - `employeeType` must be one of 'employee', 'intern', or 'others'.
+    - `staffId` format for 'employee' must be 'PDS-XXX' or 'PDS-XXX/R'.
+    - `staffId` format for 'intern' must be 'PDSI-XXX' or 'PDSI-XXX/R'.
+    - The `email` must be unique.
 
-#### PATCH /users/admin/updateStaff/:staffId
+### List All Staff
 
-Update an existing staff member.
+- **Endpoint:** `/listAllStaff`
+- **Method:** `GET`
+- **Description:** Retrieves a list of all staff members.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": [
+                {
+                    "_id": "ObjectId",
+                    "name": "string",
+                    "staffId": "string",
+                    "employeeType": "string",
+                    "status": "string",
+                    "user": {
+                        "_id": "ObjectId",
+                        "email": "string",
+                        "roles": ["string"]
+                    },
+                    "createdAt": "Date",
+                    "updatedAt": "Date"
+                }
+            ],
+            "message": "Fetched all staff"
+        }
+        ```
 
-**Headers:**
+### Update Staff
 
-```
-Authorization: Bearer <admin_token>
-```
+- **Endpoint:** `/updateStaff/:staffId`
+- **Method:** `PATCH`
+- **Description:** Updates a staff member's information.
+- **URL Parameters:**
+    - `staffId`: The ID of the staff member to update.
+- **Request Body:**
+    ```json
+    {
+        "name": "string",
+        "email": "string",
+        "role": "string",
+        "staffId": "string",
+        "employeeType": "string",
+        "status": "string"
+    }
+    ```
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "name": "string",
+                "staffId": "string",
+                "employeeType": "string",
+                "status": "string",
+                "user": {
+                    "_id": "ObjectId",
+                    "email": "string",
+                    "roles": ["string"]
+                },
+                "createdAt": "Date",
+                "updatedAt": "Date"
+            },
+            "message": "Staff updated successfully"
+        }
+        ```
+    - **404 Not Found:** If the staff member is not found.
 
-**Parameters:**
+### Change Password
 
-- `staffId` (string): The ID of the staff member to update
+- **Endpoint:** `/change-password/:staffId`
+- **Method:** `PATCH`
+- **Description:** Changes the password for a user associated with a staff member.
+- **URL Parameters:**
+    - `staffId`: The ID of the staff member.
+- **Request Body:**
+    ```json
+    {
+        "newPassword": "string (required)"
+    }
+    ```
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "message": "Password updated successfully"
+            },
+            "message": "Password changed successfully"
+        }
+        ```
+    - **400 Bad Request:** If `newPassword` is not provided.
+    - **404 Not Found:** If the staff member or associated user is not found.
 
-**Request Body:**
+### Create Client
 
-```json
-{
-    "name": "John Smith",
-    "email": "john.smith@example.com",
-    "role": "frontend",
-    "internId": "INT002",
-    "employeeType": "full-time",
-    "status": "active"
-}
-```
+- **Endpoint:** `/createClient`
+- **Method:** `POST`
+- **Description:** Creates a new client.
+- **Request Body:**
+    ```json
+    {
+        "clientName": "string (required)",
+        "clientPhone": "string (required, unique)",
+        "clientEmail": "string (required, unique)",
+        "GST": "string (required)",
+        "billingType": "string (required)",
+        "billingStatus": "string (optional, default: 'pending')"
+    }
+    ```
+- **Response:**
+    - **201 Created:**
+        ```json
+        {
+            "statusCode": 201,
+            "data": {
+                "_id": "ObjectId",
+                "clientName": "string",
+                "clientPhone": "string",
+                "clientEmail": "string",
+                "GST": "string",
+                "billingType": "string",
+                "billingStatus": "string",
+                "createdAt": "Date",
+                "updatedAt": "Date"
+            },
+            "message": "Client created successfully"
+        }
+        ```
+    - **400 Bad Request:** If required fields are missing or if a client with the same email or phone already exists.
 
-**Response (Success - 200):**
+### List All Clients
 
-```json
-{
-    "statusCode": 200,
-    "data": {
-        "_id": "staff_id",
-        "name": "John Smith",
-        "internId": "INT002",
-        "employeeType": "full-time",
-        "status": "active",
-        "user": {
-            "_id": "user_id",
-            "email": "john.smith@example.com",
-            "roles": ["frontend"],
-            "createdAt": "2023-01-01T00:00:00.000Z",
-            "updatedAt": "2023-01-01T00:00:00.000Z"
+- **Endpoint:** `/listAllClients`
+- **Method:** `GET`
+- **Description:** Retrieves a list of all clients.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": [
+                {
+                    "_id": "ObjectId",
+                    "clientName": "string",
+                    "clientPhone": "string",
+                    "clientEmail": "string",
+                    "GST": "string",
+                    "billingType": "string",
+                    "billingStatus": "string",
+                    "createdAt": "Date",
+                    "updatedAt": "Date"
+                }
+            ],
+            "message": "Clients fetched successfully"
+        }
+        ```
+
+### Create Project
+
+- **Endpoint:** `/createProject`
+- **Method:** `POST`
+- **Description:** Creates a new project.
+- **Request Body:**
+    ```json
+    {
+        "clientName": "ObjectId (required)",
+        "projectID": "string (required, unique, format: PDSXXX)",
+        "projectName": "string (required)",
+        "projectValue": "number (required)",
+        "advancePayment": "number (optional, default: 0)",
+        "paymentDate": "string (required, format: dd-mm-yyyy)",
+        "projectLead": "ObjectId (required)",
+        "designer": "ObjectId (required)",
+        "frontend": "ObjectId (required)",
+        "backend": "ObjectId (required)",
+        "deadline": "string (required, format: dd-mm-yyyy)",
+        "awsDetails": {
+            "id": "string (required)",
+            "password": "string (required)"
         },
-        "createdAt": "2023-01-01T00:00:00.000Z",
-        "updatedAt": "2023-01-01T00:00:00.000Z"
-    },
-    "message": "Staff updated successfully",
-    "success": true
-}
-```
+        "requirement": "string",
+        "sow": "string",
+        "status": "string (optional)"
+    }
+    ```
+- **Response:**
+    - **201 Created:**
+        ```json
+        {
+            "statusCode": 201,
+            "data": {
+                "_id": "ObjectId",
+                "clientName": "ObjectId",
+                "projectID": "string",
+                "projectName": "string",
+                "projectValue": "number",
+                "advancePayment": "number",
+                "paymentDate": "Date",
+                "projectLead": "ObjectId",
+                "designer": "ObjectId",
+                "frontend": "ObjectId",
+                "backend": "ObjectId",
+                "deadline": "Date",
+                "awsDetails": {
+                    "id": "string",
+                    "password": "string"
+                },
+                "requirement": "string",
+                "sow": "string",
+                "status": "string",
+                "createdAt": "Date",
+                "updatedAt": "Date"
+            },
+            "message": "Project created successfully"
+        }
+        ```
+    - **400 Bad Request:** If required fields are missing or validation fails.
 
-#### PATCH /users/admin/change-password/:userId
+### List All Projects
 
-Change password for any user.
+- **Endpoint:** `/listAllProjects`
+- **Method:** `GET`
+- **Description:** Retrieves a list of all projects.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": [
+                {
+                    "_id": "ObjectId",
+                    "clientName": "ObjectId",
+                    "projectID": "string",
+                    "projectName": "string",
+                    "projectValue": "number",
+                    "advancePayment": "number",
+                    "paymentDate": "Date",
+                    "projectLead": "ObjectId",
+                    "designer": "ObjectId",
+                    "frontend": "ObjectId",
+                    "backend": "ObjectId",
+                    "deadline": "Date",
+                    "awsDetails": {
+                        "id": "string",
+                        "password": "string"
+                    },
+                    "requirement": "string",
+                    "sow": "string",
+                    "status": "string",
+                    "createdAt": "Date",
+                    "updatedAt": "Date"
+                }
+            ],
+            "message": "Fetched all project"
+        }
+        ```
 
-**Headers:**
+### Update Project
 
-```
-Authorization: Bearer <admin_token>
-```
+- **Endpoint:** `/updateProject/:projectId`
+- **Method:** `PATCH`
+- **Description:** Updates a project's information.
+- **URL Parameters:**
+    - `projectId`: The ID of the project to update.
+- **Request Body:**
+    ```json
+    {
+        "projectID": "string",
+        "projectName": "string",
+        "projectValue": "number",
+        "advancePayment": "number",
+        "paymentDate": "string (format: dd-mm-yyyy)",
+        "projectLead": "ObjectId",
+        "designer": "ObjectId",
+        "frontend": "ObjectId",
+        "backend": "ObjectId",
+        "deadline": "string (format: dd-mm-yyyy)",
+        "awsDetails": {
+            "id": "string",
+            "password": "string"
+        },
+        "sow": "string",
+        "status": "string (enum: 'in progress', 'completed', 'cancelled', 'on hold')"
+    }
+    ```
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "clientName": "ObjectId",
+                "projectID": "string",
+                "projectName": "string",
+                "projectValue": "number",
+                "advancePayment": "number",
+                "paymentDate": "Date",
+                "projectLead": "ObjectId",
+                "designer": "ObjectId",
+                "frontend": "ObjectId",
+                "backend": "ObjectId",
+                "deadline": "Date",
+                "awsDetails": {
+                    "id": "string",
+                    "password": "string"
+                },
+                "requirement": "string",
+                "sow": "string",
+                "status": "string",
+                "createdAt": "Date",
+                "updatedAt": "Date"
+            },
+            "message": "Project updated successfully"
+        }
+        ```
+    - **400 Bad Request:** If validation fails.
+    - **404 Not Found:** If the project is not found.
 
-**Parameters:**
+## Backend API
 
-- `userId` (string): The ID of the user whose password to change
+Base Path: `/api/v1/backend`
 
-**Request Body:**
+All endpoints under this path require backend authentication.
 
-```json
-{
-    "newPassword": "newPassword123"
-}
-```
+### List Backend Projects
 
-**Response (Success - 200):**
+- **Endpoint:** `/list-projects`
+- **Method:** `GET`
+- **Description:** Retrieves a list of all projects assigned to the logged-in backend developer.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": [
+                {
+                    "projectID": "string",
+                    "projectName": "string",
+                    "Description": "string",
+                    "projectLead": "string",
+                    "createdOn": "Date",
+                    "deadline": "Date",
+                    "status": "string",
+                    "figma": "string",
+                    "awsDetails": {
+                        "id": "string",
+                        "password": "string"
+                    },
+                    "apiEndpoints": [
+                        {
+                            "endpoint": "string",
+                            "description": "string",
+                            "implemented": "boolean",
+                            "verified": "boolean",
+                            "_id": "ObjectId"
+                        }
+                    ]
+                }
+            ],
+            "message": "Projects fetched successfully"
+        }
+        ```
 
-```json
-{
-    "statusCode": 200,
-    "data": {
-        "message": "Password updated successfully"
-    },
-    "message": "Password changed successfully",
-    "success": true
-}
-```
+### Implement API Endpoint
 
-#### GET /users/admin/admintest
+- **Endpoint:** `/implement-api/:projectID/:apiId`
+- **Method:** `PATCH`
+- **Description:** Marks an API endpoint as implemented.
+- **URL Parameters:**
+    - `projectID`: The ID of the project.
+    - `apiId`: The ID of the API endpoint.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "project": "ObjectId",
+                "apiRepository": [
+                    {
+                        "endpoint": "string",
+                        "description": "string",
+                        "implemented": true,
+                        "verified": "boolean",
+                        "implementedBy": "ObjectId",
+                        "_id": "ObjectId"
+                    }
+                ]
+            },
+            "message": "API endpoint marked as implemented"
+        }
+        ```
+    - **403 Forbidden:** If the user is not authorized to implement APIs for this project.
+    - **404 Not Found:** If the project or API endpoint is not found.
 
-Test endpoint for admin authentication.
+## Designer API
 
-**Headers:**
+Base Path: `/api/v1/designer`
 
-```
-Authorization: Bearer <admin_token>
-```
+All endpoints under this path require designer authentication.
 
-**Response (Success - 200):**
+### List Designer Projects
 
-```json
-{
-    "statusCode": 200,
-    "data": {
-        "_id": "user_id",
-        "email": "admin@example.com",
-        "roles": ["admin"],
-        "createdAt": "2023-01-01T00:00:00.000Z",
-        "updatedAt": "2023-01-01T00:00:00.000Z"
-    },
-    "message": "Admin is logged in",
-    "success": true
-}
-```
+- **Endpoint:** `/list-projects`
+- **Method:** `GET`
+- **Description:** Retrieves a list of all projects assigned to the logged-in designer.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": [
+                {
+                    "projectID": "string",
+                    "projectName": "string",
+                    "Description": "string",
+                    "projectLead": "string",
+                    "createdOn": "Date",
+                    "deadline": "Date",
+                    "designStatus": "string",
+                    "uploadfigma": "string"
+                }
+            ],
+            "message": "Projects fetched successfully"
+        }
+        ```
 
----
+### Update Design Status
 
-### Role-Based Test Endpoints
+- **Endpoint:** `/update-status/:projectID`
+- **Method:** `PATCH`
+- **Description:** Updates the design status of a project.
+- **URL Parameters:**
+    - `projectID`: The ID of the project.
+- **Request Body:**
+    ```json
+    {
+        "designStatus": "string (required, enum: 'in progress', 'not started', 'on hold', 'completed')"
+    }
+    ```
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "projectID": "string",
+                "projectName": "string",
+                "sow": "string",
+                "createdAt": "Date",
+                "deadline": "Date",
+                "designStatus": "string",
+                "requirement": "string"
+            },
+            "message": "Design status updated successfully"
+        }
+        ```
+    - **400 Bad Request:** If `designStatus` is missing or invalid.
+    - **403 Forbidden:** If the user is not authorized to update this project.
+    - **404 Not Found:** If the project is not found.
 
-#### GET /users/pl/pltest
+### Update Figma Link
 
-Test endpoint for project lead authentication.
+- **Endpoint:** `/update-figma/:projectID`
+- **Method:** `PATCH`
+- **Description:** Updates the Figma link for a project.
+- **URL Parameters:**
+    - `projectID`: The ID of the project.
+- **Request Body:**
+    ```json
+    {
+        "figmaLink": "string (required)"
+    }
+    ```
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "projectID": "string",
+                "projectName": "string",
+                "sow": "string",
+                "createdAt": "Date",
+                "deadline": "Date",
+                "designStatus": "string",
+                "requirement": "string"
+            },
+            "message": "Figma link updated successfully"
+        }
+        ```
+    - **400 Bad Request:** If `figmaLink` is not provided.
+    - **403 Forbidden:** If the user is not authorized to update this project.
+    - **404 Not Found:** If the project is not found.
 
-**Headers:**
+## Frontend API
 
-```
-Authorization: Bearer <project_lead_token>
-```
+Base Path: `/api/v1/frontend`
 
-**Response (Success - 200):**
+All endpoints under this path require frontend authentication.
 
-```json
-{
-    "statusCode": 200,
-    "data": {
-        "_id": "user_id",
-        "email": "pl@example.com",
-        "roles": ["project lead"],
-        "createdAt": "2023-01-01T00:00:00.000Z",
-        "updatedAt": "2023-01-01T00:00:00.000Z"
-    },
-    "message": "Accounts user is logged in",
-    "success": true
-}
-```
+### List Frontend Projects
 
-#### GET /users/b/btest
+- **Endpoint:** `/list-projects`
+- **Method:** `GET`
+- **Description:** Retrieves a list of all projects assigned to the logged-in frontend developer.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": [
+                {
+                    "projectID": "string",
+                    "projectName": "string",
+                    "Description": "string",
+                    "projectLead": "string",
+                    "createdOn": "Date",
+                    "deadline": "Date",
+                    "status": "string",
+                    "figma": "string",
+                    "awsDetails": {
+                        "id": "string",
+                        "password": "string"
+                    },
+                    "apiEndpoints": [
+                        {
+                            "endpoint": "string",
+                            "description": "string",
+                            "implemented": "boolean",
+                            "verified": "boolean",
+                            "_id": "ObjectId"
+                        }
+                    ]
+                }
+            ],
+            "message": "Projects fetched successfully"
+        }
+        ```
 
-Test endpoint for backend developer authentication.
+### Add API Endpoint
 
-**Headers:**
+- **Endpoint:** `/add-api/:projectID`
+- **Method:** `POST`
+- **Description:** Adds a new API endpoint requirement to a project.
+- **URL Parameters:**
+    - `projectID`: The ID of the project.
+- **Request Body:**
+    ```json
+    {
+        "endpoint": "string (required)",
+        "method": "string (required, enum: GET, POST, PUT, DELETE, PATCH)",
+        "requestFormat": "object",
+        "responseFormat": "object"
+    }
+    ```
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "project": "ObjectId",
+                "apiRepository": [
+                    {
+                        "endpoint": "string",
+                        "method": "string",
+                        "requestFormat": "object",
+                        "responseFormat": "object",
+                        "_id": "ObjectId"
+                    }
+                ]
+            },
+            "message": "API endpoint added successfully"
+        }
+        ```
+    - **400 Bad Request:** If required fields are missing or invalid.
+    - **403 Forbidden:** If the user is not authorized to add API endpoints to this project.
+    - **404 Not Found:** If the project is not found.
 
-```
-Authorization: Bearer <backend_token>
-```
+### Verify API Endpoint
 
-**Response (Success - 200):**
+- **Endpoint:** `/verify-api/:projectID/:apiId`
+- **Method:** `PATCH`
+- **Description:** Marks an API endpoint as verified by the frontend.
+- **URL Parameters:**
+    - `projectID`: The ID of the project.
+    - `apiId`: The ID of the API endpoint.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "project": "ObjectId",
+                "apiRepository": [
+                    {
+                        "endpoint": "string",
+                        "description": "string",
+                        "implemented": true,
+                        "verified": true,
+                        "implementedBy": "ObjectId",
+                        "_id": "ObjectId"
+                    }
+                ]
+            },
+            "message": "API endpoint verified successfully"
+        }
+        ```
+    - **400 Bad Request:** If the API has not been implemented yet.
+    - **403 Forbidden:** If the user is not authorized to verify APIs for this project.
+    - **404 Not Found:** If the project or API endpoint is not found.
 
-```json
-{
-    "statusCode": 200,
-    "data": {
-        "_id": "user_id",
-        "email": "backend@example.com",
-        "roles": ["backend"],
-        "createdAt": "2023-01-01T00:00:00.000Z",
-        "updatedAt": "2023-01-01T00:00:00.000Z"
-    },
-    "message": "backend user is logged in",
-    "success": true
-}
-```
+## Project Lead API
 
-#### GET /users/f/ftest
+Base Path: `/api/v1/project-lead`
 
-Test endpoint for frontend developer authentication.
+All endpoints under this path require project lead authentication.
 
-**Headers:**
+### List All Projects
 
-```
-Authorization: Bearer <frontend_token>
-```
+- **Endpoint:** `/list-projects`
+- **Method:** `GET`
+- **Description:** Retrieves a list of all projects for the logged-in project lead.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": [
+                {
+                    "_id": "ObjectId",
+                    "project": {
+                        "_id": "ObjectId",
+                        "projectID": "string",
+                        "projectName": "string",
+                        "sow": "string",
+                        "createdAt": "Date",
+                        "deadline": "Date",
+                        "status": "string",
+                        "awsDetails": {
+                            "id": "string",
+                            "password": "string"
+                        },
+                        "features": []
+                    },
+                    "apiRepository": [],
+                    "pushToP5Repo": false
+                }
+            ],
+            "message": "Projects fetched successfully"
+        }
+        ```
 
-**Response (Success - 200):**
+### Edit Project
 
-```json
-{
-    "statusCode": 200,
-    "data": {
-        "_id": "user_id",
-        "email": "frontend@example.com",
-        "roles": ["frontend"],
-        "createdAt": "2023-01-01T00:00:00.000Z",
-        "updatedAt": "2023-01-01T00:00:00.000Z"
-    },
-    "message": "Accounts user is logged in",
-    "success": true
-}
-```
+- **Endpoint:** `/edit-project/:projectID`
+- **Method:** `PATCH`
+- **Description:** Edits a project's repository details.
+- **URL Parameters:**
+    - `projectID`: The ID of the project.
+- **Request Body:**
+    ```json
+    {
+        "pushToP5Repo": "boolean"
+    }
+    ```
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "project": {
+                    "_id": "ObjectId",
+                    "projectID": "string",
+                    "projectName": "string",
+                    "sow": "string",
+                    "createdAt": "Date",
+                    "deadline": "Date",
+                    "status": "string",
+                    "awsDetails": {
+                        "id": "string",
+                        "password": "string"
+                    },
+                    "features": []
+                },
+                "apiRepository": [],
+                "pushToP5Repo": true
+            },
+            "message": "Project details updated successfully"
+        }
+        ```
+    - **404 Not Found:** If the project or project lead details are not found.
 
-#### GET /users/d/dtest
+## User API
 
-Test endpoint for designer authentication.
+Base Path: `/api/v1/users`
 
-**Headers:**
+### Login User
 
-```
-Authorization: Bearer <designer_token>
-```
+- **Endpoint:** `/login`
+- **Method:** `POST`
+- **Description:** Logs in a user and returns an access token.
+- **Request Body:**
+    ```json
+    {
+        "email": "string (required)",
+        "password": "string (required)",
+        "role": "string (required)"
+    }
+    ```
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": "string (access token)",
+            "message": "Login successful"
+        }
+        ```
+    - **400 Bad Request:** If email, password, or role are not provided, or if credentials do not match.
 
-**Response (Success - 200):**
+### Backend Test Route
 
-```json
-{
-    "statusCode": 200,
-    "data": {
-        "_id": "user_id",
-        "email": "designer@example.com",
-        "roles": ["designer"],
-        "createdAt": "2023-01-01T00:00:00.000Z",
-        "updatedAt": "2023-01-01T00:00:00.000Z"
-    },
-    "message": "Accounts user is logged in",
-    "success": true
-}
-```
+- **Endpoint:** `/b/btest`
+- **Method:** `GET`
+- **Description:** A test route for backend users. Requires backend authentication.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "email": "string",
+                "roles": ["backend"]
+            },
+            "message": "backend user is logged in"
+        }
+        ```
 
-#### GET /users/a/atest
+### Frontend Test Route
 
-Test endpoint for accounts manager authentication.
+- **Endpoint:** `/f/ftest`
+- **Method:** `GET`
+- **Description:** A test route for frontend users. Requires frontend authentication.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "email": "string",
+                "roles": ["frontend"]
+            },
+            "message": "Accounts user is logged in"
+        }
+        ```
 
-**Headers:**
+### Accounts Test Route
 
-```
-Authorization: Bearer <accounts_token>
-```
-
-**Response (Success - 200):**
-
-```json
-{
-    "statusCode": 200,
-    "data": {
-        "_id": "user_id",
-        "email": "accounts@example.com",
-        "roles": ["accounts"],
-        "createdAt": "2023-01-01T00:00:00.000Z",
-        "updatedAt": "2023-01-01T00:00:00.000Z"
-    },
-    "message": "Accounts user is logged in",
-    "success": true
-}
-```
-
----
-
-## Data Models
-
-### User Model
-
-```json
-{
-    "_id": "ObjectId",
-    "email": "string (required, unique, lowercase)",
-    "password": "string (required, hashed)",
-    "roles": [
-        "array of strings (enum: admin, designer, frontend, backend, accounts, project lead, user)"
-    ],
-    "createdAt": "Date",
-    "updatedAt": "Date"
-}
-```
-
-### Staff Model
-
-```json
-{
-    "_id": "ObjectId",
-    "name": "string (required)",
-    "internId": "string (unique, optional)",
-    "employeeType": "string (enum: intern, full-time)",
-    "status": "string (enum: active, inactive, default: active)",
-    "user": "ObjectId (ref: User, required)",
-    "createdAt": "Date",
-    "updatedAt": "Date"
-}
-```
-
-### Client Model
-
-```json
-{
-    "_id": "ObjectId",
-    "clientId": "number (auto-increment, unique)",
-    "clientName": "string (required)",
-    "clientPhone": "string (required, 10-digit validation)",
-    "clientEmail": "string (required, email validation)",
-    "GST": "string (optional, GST format validation)",
-    "estimatedValue": "number (required, min: 0)",
-    "confirmationBy": "string (enum: email, phone)",
-    "billingType": "string (enum: annually, onetime, monthly)",
-    "billingStatus": "string (enum: pending, paid, overdue, default: pending)",
-    "createdAt": "Date",
-    "updatedAt": "Date"
-}
-```
+- **Endpoint:** `/a/atest`
+- **Method:** `GET`
+- **Description:** A test route for accounts users. Requires accounts authentication.
+- **Response:**
+    - **200 OK:**
+        ```json
+        {
+            "statusCode": 200,
+            "data": {
+                "_id": "ObjectId",
+                "email": "string",
+                "roles": ["accounts"]
+            },
+            "message": "Accounts user is logged in"
+        }
+        ```
