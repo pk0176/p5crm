@@ -199,9 +199,8 @@ const changePassword = asyncHandler(async (req, res) => {
     if (!user) {
         throw new ApiError(404, "Associated user account not found");
     }
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
     // Update password
-    user.password = hashedPassword;
+    user.password = newPassword;
     await user.save();
 
     return res
