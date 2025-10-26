@@ -7,13 +7,15 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { parseDate } from "../utils/parseDate.js";
 import { Project } from "../models/project.model.js";
 import mongoose from "mongoose";
-import bycrpt from "bcrypt";
+import bcrypt from "bcrypt";
 import { ProjectLead } from "../models/projectLead.model.js";
 
 // Create Staff
 const createStaff = asyncHandler(async (req, res) => {
     const { name, email, password, role, staffId, employeeType, status } =
         req.body;
+
+    console.log("Creating user with password:", password);
 
     // Validate required fields
     if (
@@ -53,13 +55,10 @@ const createStaff = asyncHandler(async (req, res) => {
         throw new ApiError(400, "User with this email already exists");
     }
 
-    // Hash password (typo fixed: bcrypt, not bycrpt)
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     //  Create User
     const user = await User.create({
         email,
-        password: hashedPassword,
+        password: password,
         roles: [role.toLowerCase()],
     });
 
@@ -200,7 +199,7 @@ const changePassword = asyncHandler(async (req, res) => {
     if (!user) {
         throw new ApiError(404, "Associated user account not found");
     }
-    const hashedPassword = await bycrpt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     // Update password
     user.password = hashedPassword;
     await user.save();

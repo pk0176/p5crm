@@ -14,7 +14,7 @@ const loginUser = asyncHandler(async (req, res) => {
         email,
         roles: { $in: [roleInLowerCase] },
     });
-
+    console.log(user);
     if (!user) {
         throw new ApiError(400, "Invalid credentials");
     }
