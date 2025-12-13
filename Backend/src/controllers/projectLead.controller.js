@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ProjectLead } from "../models/projectLead.model.js";
 import { Project } from "../models/project.model.js";
+import { User } from "../models/user.model.js";
 
 // List all projects for the logged-in Project Lead
 const listAllProjects = asyncHandler(async (req, res) => {
@@ -89,5 +90,57 @@ const editProject = asyncHandler(async (req, res) => {
             )
         );
 });
+const listAllBackend = asyncHandler(async (req, res) => {
+    const backendUsers = await User.find({
+        roles: { $in: ["backend"] },
+    }).select("-password");
 
-export { listAllProjects, editProject };
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                backendUsers,
+                "Backend users fetched successfully"
+            )
+        );
+});
+
+const listAllFrontend = asyncHandler(async (req, res) => {
+    const frontendUser = await User.find({
+        roles: { $in: ["frontend"] },
+    }).select("-password");
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                frontendUser,
+                "Frontend user fetched successfully"
+            )
+        );
+});
+
+const listAllDesigner = asyncHandler(async (req, res) => {
+    const designerUser = await User.find({
+        roles: { $in: ["designer"] },
+    }).select("-password");
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                designerUser,
+                "Designer users fetched successfully"
+            )
+        );
+});
+
+export {
+    listAllProjects,
+    editProject,
+    listAllBackend,
+    listAllDesigner,
+    listAllFrontend,
+};
